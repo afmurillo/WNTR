@@ -59,7 +59,78 @@ class EpanetSimulator(WaterNetworkSimulator):
         if self.reader is None:
             self.reader = wntr.epanet.io.BinFile(result_types=result_types)
 
-    def run_sim(self, file_prefix='temp', save_hyd=False, use_hyd=False, hydfile=None, version=2.2, convergence_error=False):
+    def update_actuators_state(self, enData, actuator_list):
+        for actuator in actuator_list:
+            node_id = enData.ENgetnodeindex('T1')
+            print("Trying with a node from epanet.py " + str(node_id))
+            print("Printing from epanet.py " + str(actuator['name']))
+            #link_id = enData.ENgetlinkindex(actuator['name'])
+            link_id = enData.ENgetlinkindex()
+            print("For actuator: " + str(actuator['name']) + " the ID is: " + str(link_id))
+
+    def run_sim_with_custom_actuators(self, actuator_list, file_prefix='temp', save_hyd=False, use_hyd=False, hydfile=None, version=2.2):
+        """
+        Run the EPANET simulator.
+
+        Runs the EPANET simulator through the compiled toolkit DLL. Can use/save hydraulics
+        to allow for separate WQ runs.
+
+        .. note::
+
+            By default, WNTR now uses the EPANET 2.2 toolkit as the engine for the EpanetSimulator.
+            To force usage of the older EPANET 2.0 toolkit, use the ``version`` command line option.
+            Note that if the demand_model option is set to PDD, then a warning will be issued, as
+            EPANET 2.0 does not support such analysis.
+
+
+        Parameters
+        ----------
+        actuator_list: A dictionary list with the actuators name and statuses
+        file_prefix : str
+            Default prefix is "temp". All files (.inp, .bin/.out, .hyd, .rpt) use this prefix
+        use_hyd : bool
+            Will load hydraulics from ``file_prefix + '.hyd'`` or from file specified in `hydfile_name`
+        save_hyd : bool
+            Will save hydraulics to ``file_prefix + '.hyd'`` or to file specified in `hydfile_name`
+        hydfile : str
+            Optionally specify a filename for the hydraulics file other than the `file_prefix`
+        version : float, {2.0, **2.2**}
+            Optionally change the version of the EPANET toolkit libraries. Valid choices are
+            either 2.2 (the default if no argument provided) or 2.0.
+
+        """
+        inpfile = file_prefix + '.inp'
+        self._wn.write_inpfile(inpfile, units=self._wn.options.hydraulic.inpfile_units, version=version)
+        enData = wntr.epanet.toolkit.ENepanet(version=version)
+
+        self.update_actuators_state(enData, actuator_list)
+
+        rptfile = file_prefix + '.rpt'
+        outfile = file_prefix + '.bin'
+        if hydfile is None:
+            hydfile = file_prefix + '.hyd'
+        enData.ENopen(inpfile, rptfile, outfile)
+        if use_hyd:
+            enData.ENusehydfile(hydfile)
+            logger.debug('Loaded hydraulics')
+        else:
+            enData.ENsolveH()
+            logger.debug('Solved hydraulics')
+        if save_hyd:
+            enData.ENsavehydfile(hydfile)
+            logger.debug('Saved hydraulics')
+        enData.ENsolveQ()
+        logger.debug('Solved quality')
+        enData.ENreport()
+        logger.debug('Ran quality')
+        enData.ENclose()
+        logger.debug('Completed run')
+        # os.sys.stderr.write('Finished Closing\n')
+        return self.reader.read(outfile)
+
+
+
+    def run_sim(self, file_prefix='temp', save_hyd=False, use_hyd=False, hydfile=None, version=2.2):
         """
         Run the EPANET simulator.
 
@@ -87,16 +158,12 @@ class EpanetSimulator(WaterNetworkSimulator):
         version : float, {2.0, **2.2**}
             Optionally change the version of the EPANET toolkit libraries. Valid choices are
             either 2.2 (the default if no argument provided) or 2.0.
-        convergence_error: bool (optional)
-            If convergence_error is True, an error will be raised if the
-            simulation does not converge. If convergence_error is False, partial results are returned, 
-            a warning will be issued, and results.error_code will be set to 0
-            if the simulation does not converge.  Default = False.
+
         """
-        if isinstance(version, str):
-            version = float(version)
         inpfile = file_prefix + '.inp'
         self._wn.write_inpfile(inpfile, units=self._wn.options.hydraulic.inpfile_units, version=version)
+        #self._wn.write_inpfile('/home/mininet/WadiTwin/ICS_topologies/enhanced_ctown_topology/temp.inp', units=self._wn.options.hydraulic.inpfile_units, version=version)
+        #/ home / mininet / WadiTwin / ICS_topologies / enhanced_ctown_topology /
         enData = wntr.epanet.toolkit.ENepanet(version=version)
         rptfile = file_prefix + '.rpt'
         outfile = file_prefix + '.bin'
@@ -119,5 +186,5 @@ class EpanetSimulator(WaterNetworkSimulator):
         enData.ENclose()
         logger.debug('Completed run')
         #os.sys.stderr.write('Finished Closing\n')
-        return self.reader.read(outfile, convergence_error)
+        return self.reader.read(outfile)
 

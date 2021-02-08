@@ -424,7 +424,7 @@ class ENepanet():
 
     def ENgetnodeindex(self, sId):
         """Retrieves index of a node with specific ID
-
+                                                                
         Parameters
         -------------
         sId : int
@@ -477,6 +477,20 @@ class ENepanet():
         self.errcode = self.ENlib.ENgetlinkindex(sId.encode('ascii'), byref(iIndex))
         self._error()
         return iIndex.value
+
+    def ENsetlinkvalue(self, iIndex, iCode, iValue):
+        """Sets a value value for a link
+
+        Parameters
+        -------------
+        iIndex : int
+            Link index
+        iValue: int
+            Value for the link
+        iCode : int
+            Link parameter code (see toolkit.optLinkParams)
+        """
+        self.ENlib.ENsetlinkvalue(iIndex, iCode, iValue)
 
     def ENgetlinkvalue(self, iIndex, iCode):
         """Retrieves parameter value for a link
