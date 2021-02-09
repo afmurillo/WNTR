@@ -17,6 +17,7 @@ from ctypes import byref
 import os.path
 from pkg_resources import resource_filename
 import platform
+import numpy as np
 epanet_toolkit = 'wntr.epanet.toolkit'
 
 if os.name in ['nt','dos']:
@@ -490,7 +491,10 @@ class ENepanet():
         iCode : int
             Link parameter code (see toolkit.optLinkParams)
         """
-        self.ENlib.ENsetlinkvalue(iIndex, iCode, iValue)
+        int_index = ctypes.c_int(iIndex)
+        int_iCode = ctypes.c_int(iCode)
+        f_iValue = ctypes.c_float(iValue)
+        self.ENlib.ENsetlinkvalue(int_index, int_iCode, f_iValue)
 
     def ENgetlinkvalue(self, iIndex, iCode):
         """Retrieves parameter value for a link

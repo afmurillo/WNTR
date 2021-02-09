@@ -63,8 +63,9 @@ class EpanetSimulator(WaterNetworkSimulator):
         for actuator in actuator_list:
             link_index = enData.ENgetlinkindex(actuator['name'])
 
-            #toDo: Replace the 11 with the actual constant definition¿
+            #toDo: Replace the 11 with the actual constant definition
             enData.ENsetlinkvalue(link_index, 11, actuator['status'])
+            print("For actuator: " + str(actuator['name']) + " The status is: " + str(enData.ENgetlinkvalue(link_index, 11)))
 
     def run_sim_with_custom_actuators(self, actuator_list, file_prefix='temp', save_hyd=False, use_hyd=False, hydfile=None, version=2.2):
         """
