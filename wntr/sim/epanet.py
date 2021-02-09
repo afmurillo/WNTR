@@ -59,14 +59,12 @@ class EpanetSimulator(WaterNetworkSimulator):
         if self.reader is None:
             self.reader = wntr.epanet.io.BinFile(result_types=result_types)
 
-    def update_actuators_state(self, enData, actuator_list):
+    def update_actuators_status(self, enData, actuator_list):
         for actuator in actuator_list:
-            node_id = enData.ENgetnodeindex('T1')
-            print("Trying with a node from epanet.py " + str(node_id))
-            print("Printing from epanet.py " + str(actuator['name']))
-            #link_id = enData.ENgetlinkindex(actuator['name'])
-            link_id = enData.ENgetlinkindex()
-            print("For actuator: " + str(actuator['name']) + " the ID is: " + str(link_id))
+            link_index = enData.ENgetlinkindex(actuator['name'])
+
+            #toDo: Replace the 11 with the actual constant definition¿
+            enData.ENsetlinkvalue(link_index, 11, actuator['status'])
 
     def run_sim_with_custom_actuators(self, actuator_list, file_prefix='temp', save_hyd=False, use_hyd=False, hydfile=None, version=2.2):
         """
@@ -103,13 +101,15 @@ class EpanetSimulator(WaterNetworkSimulator):
         self._wn.write_inpfile(inpfile, units=self._wn.options.hydraulic.inpfile_units, version=version)
         enData = wntr.epanet.toolkit.ENepanet(version=version)
 
-        self.update_actuators_state(enData, actuator_list)
-
         rptfile = file_prefix + '.rpt'
         outfile = file_prefix + '.bin'
         if hydfile is None:
             hydfile = file_prefix + '.hyd'
         enData.ENopen(inpfile, rptfile, outfile)
+
+        # actuator_list comes from MiniCPS
+        self.update_actuators_status(enData, actuator_list)
+
         if use_hyd:
             enData.ENusehydfile(hydfile)
             logger.debug('Loaded hydraulics')
