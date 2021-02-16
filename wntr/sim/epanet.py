@@ -53,7 +53,8 @@ class EpanetSimulator(WaterNetworkSimulator):
 
     """
     def __init__(self, wn, reader=None, result_types=None):
-        WaterNetworkSimulator.__init__(self, wn)
+
+       WaterNetworkSimulator.__init__(self, wn)
         self.reader = reader
         self.prep_time_before_main_loop = 0.0
         if self.reader is None:
@@ -99,7 +100,29 @@ class EpanetSimulator(WaterNetworkSimulator):
 
         """
         inpfile = file_prefix + '.inp'
+
+        # in epanetCPA
+        # getCurrentState - feed this state into the control logic
+
+        #while True:
+
+            # update_actuators
+                # reading from DB
+
+            # set_links... enData
+
+            # next_step
+            # read report
+            # update_db
+
+            # minicps applies control logic
+
+            # Can the C function create a report from a single step simulation? Can the return from that function
+            # be used to only change the status that we need into the water network model and then be fed into runH nextH
+
         self._wn.write_inpfile(inpfile, units=self._wn.options.hydraulic.inpfile_units, version=version)
+
+
         enData = wntr.epanet.toolkit.ENepanet(version=version)
 
         rptfile = file_prefix + '.rpt'
@@ -108,8 +131,18 @@ class EpanetSimulator(WaterNetworkSimulator):
             hydfile = file_prefix + '.hyd'
         enData.ENopen(inpfile, rptfile, outfile)
 
+        #init ?
         # actuator_list comes from MiniCPS
         self.update_actuators_status(enData, actuator_list)
+        # init?
+
+        # runH
+
+        # nextH
+
+        # get the state
+
+        # closeH
 
         if use_hyd:
             enData.ENusehydfile(hydfile)

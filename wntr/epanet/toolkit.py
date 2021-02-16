@@ -17,7 +17,6 @@ from ctypes import byref
 import os.path
 from pkg_resources import resource_filename
 import platform
-import numpy as np
 epanet_toolkit = 'wntr.epanet.toolkit'
 
 if os.name in ['nt','dos']:
